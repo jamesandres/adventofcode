@@ -53,10 +53,17 @@ class Space:
     
     def num_active_neighbours(self, x, y, z):
         counter = 0
-        for dz in (-1, 1):
-            for dy in (-1, 1):
-                for dx in (-1, 1):
-                    if self.get(x + dx, y + dy, z + dz) == '#':
+        for dz in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    if (dx, dy, dz) == (0, 0, 0):
+                        continue
+                    nx = x + dx
+                    ny = y + dy
+                    nz = z + dz
+                    value = self.get(x + dx, y + dy, z + dz)
+                    print(f'({nx}, {ny}, {nz}) is {repr(value)}')
+                    if value == '#':
                         counter += 1
         return counter
 
@@ -95,6 +102,7 @@ def cycle(space):
     next_space = Space()
     for x, y, z, value in space.points():
         num_active = space.num_active_neighbours(x, y, z)
+        print(f'{x=},{y=},{z=},{value=},{num_active=}')
         # (1) If a cube is active and exactly 2 or 3 of its neighbors
         #     are also active, the cube remains active. Otherwise,
         #     the cube becomes inactive.
