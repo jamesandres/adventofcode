@@ -1,0 +1,12 @@
+$ cd /
+$ ls
+dir a
+$ cd a
+$ ls
+1 inner1.txt
+$ cd ..
+$ ls
+1 outer.txt
+$ cd a
+$ ls
+1 inner2.txt

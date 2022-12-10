@@ -110,14 +110,58 @@ def main(commands):
     Find all of the directories with a total size of at most 100000. What is the sum of the total
     sizes of those directories?
     """
-    filesystem = make_filesystem(commands)
-    print(filesystem)
+    root = make_filesystem(commands)
+    sum_of_sizes = 0
+    for node in flatten_filesystem(root):
+        if node.size <= 100000 and len(node.children) > 0:
+            sum_of_sizes += node.size
+    print(sum_of_sizes)
 
 
 def main2(commands):
     """
+    --- Part Two ---
+
+    Now, you're ready to choose a directory to delete.
+
+    The total disk space available to the filesystem is 70000000. To run the update, you need unused
+    space of at least 30000000. You need to find a directory you can delete that will free up
+    enough space to run the update.
+
+    In the example above, the total size of the outermost directory (and thus the total amount of
+    used space) is 48381165; this means that the size of the unused space must currently be
+    21618835, which isn't quite the 30000000 required by the update. Therefore, the update still
+    requires a directory with total size of at least 8381165 to be deleted before it can run.
+
+    To achieve this, you have the following options:
+
+      - Delete directory e, which would increase unused space by 584.
+      - Delete directory a, which would increase unused space by 94853.
+      - Delete directory d, which would increase unused space by 24933642.
+      - Delete directory /, which would increase unused space by 48381165.
+
+    Directories e and a are both too small; deleting them would not free up enough space. However,
+    directories d and / are both big enough! Between these, choose the smallest: d, increasing
+    unused space by 24933642.
+
+    Find the smallest directory that, if deleted, would free up enough space on the filesystem to
+    run the update. What is the total size of that directory?
     """
-    print(commands)
+    root = make_filesystem(commands)
+    free_space = 70000000 - root.size
+    remaining_space_needed = 30000000 - free_space
+    best_option = root
+    for node in flatten_filesystem(root):
+        if node.size >= remaining_space_needed and node.size < best_option.size:
+            best_option = node
+    print(best_option.size)
+
+
+def flatten_filesystem(node):
+    all_nodes = [node]
+    for child in node.children:
+        all_nodes.extend(flatten_filesystem(child))
+    return all_nodes
 
 
 def make_filesystem(commands):
@@ -141,16 +185,21 @@ def make_filesystem(commands):
                           File(name='d.ext', size='5626152'),
                           File(name='k', size='7214296')])]
     """
-    filesystem = Filesystem()
+    root = Node('/')
+    # We have no starting cwd, so we depend on the first command being 'cd /'
     for command, outputs in commands:
         if command[0] == 'cd':
-            filesystem.cd(command[1])
+            if command[1] == '/':
+                cwd = root
+            else:
+                cwd = cwd.cd(command[1])
         elif command[0] == 'ls':
             for output in outputs:
                 if isinstance(output, OutputDir):
-                    filesystem.mkdir(output.name)
+                    cwd.mkdir(output.name)
                 elif isinstance(output, OutputFile):
-                    filesystem.mkfile(output.name, output.size)
+                    cwd.mkfile(output.name, output.size)
+    return root
 
 
 def parse(input):
@@ -176,13 +225,54 @@ OutputDir = namedtuple('Dir', ['name'])
 OutputFile = namedtuple('OutputFile', ['name', 'size'])
 
 
-class Filesystem:
-    def __init__(self):
-        self.root = []
+class Node:
+    def __init__(self, name, size=0, parent=None):
+        self.name = name
+        self.size = size
+        self.parent = parent
+        self.children = []
 
+    def __repr__(self):
+        return f'Node({repr(self.name)}{", size=" + repr(self.size) if self.size else ""}{", parent=" + repr(self.parent) if self.parent else ""})'
 
-def Node:
-    def __init__(self, )
+    def __str__(self):
+        if len(self.children) > 0:
+            return f'N({self.name} [{", ".join([str(child) for child in self.children])}])'
+        else:
+            return f'N({self.name}{":" + str(self.size) if self.size is not None else ""})'
+
+    def cd(self, dir):
+        if dir == '..':
+            return self.parent
+        else:
+            return self.find_child(dir)
+
+    def mkdir(self, name):
+        self.assert_child_not_yet_exists(name)
+        new_child = Node(name, size=0, parent=self)
+        self.children.append(new_child)
+        return new_child
+
+    def mkfile(self, name, size):
+        self.assert_child_not_yet_exists(name)
+        new_child = Node(name, size=size, parent=self)
+        self.children.append(new_child)
+        self.propagate_size_up(size)
+        return new_child
+
+    def find_child(self, name):
+        matches = list(filter(lambda n: n.name == name, self.children))
+        assert len(matches) == 1
+        return matches[0]
+
+    def assert_child_not_yet_exists(self, name):
+        matches = list(filter(lambda n: n.name == name, self.children))
+        assert len(matches) == 0
+
+    def propagate_size_up(self, size):
+        self.size += size
+        if self.parent:
+            self.parent.propagate_size_up(size)
 
 
 def raw_input(filename):
