@@ -65,43 +65,52 @@ def num_visible(grid):
     height = len(grid)
     num = 0
     seen = deepcopy(grid)
-    # walk a diagonal
-    for i in range(0, width):
-        print(f'DIAG {i},{i}')
-        max_x = -1
-        for x in range(0, i + 1):
-            print(f'  A: {x},{i} ({grid[x][i]} >? {max_x})')
-            if grid[x][i] > max_x and seen[x][i] != '@':
-                print(f'    SEEN {x},{i} going {{0 -> {i}}}, {grid[x][i]}>{max_x}')
-                seen[x][i] = '@'
-                num += 1
-                max_x = grid[x][i]
-        max_x = -1
-        for x in range(width - 1, i - 1, -1):
-            print(f'  B: {x},{i} ({grid[x][i]} >? {max_x})')
-            if grid[x][i] > max_x and seen[x][i] != '@':
-                print(f'    SEEN {x},{i} going {{{width-1} -> {i}}}, {grid[x][i]}<{max_x}')
-                seen[x][i] = '@'
-                num += 1
-                max_x = grid[x][i]
-        max_y = -1
-        for y in range(0, i + 1):
-            print(f'  C: {i},{y} ({grid[i][y]} >? {max_y})')
-            if grid[i][y] > max_y and seen[i][y] != '@':
-                print(f'    SEEN {i},{y} going {{0 -> {i}}}, {grid[i][y]}>{max_y}')
-                seen[i][y] = '@'
-                num += 1
-                max_y = grid[i][y]
-        max_y = -1
-        for y in range(height - 1, i - 1, -1):
-            print(f'  D: {i},{y} ({grid[i][y]} > {max_y})')
-            if grid[i][y] > max_y and seen[i][y] != '@':
-                print(f'    SEEN {i},{y} going {{{height-1} -> {i}}}, {grid[i][y]}<{max_y}')
-                seen[i][y] = '@'
-                num += 1
-                max_y = grid[i][y]
-    print('\n'.join([''.join(map(str, row)) for row in seen]))
+
+    for y in range(1, height - 1):
+        for x in range(1, width - 1):
+            # R->L
+            highest = -1
+            print('R->L ' * 10)
+            for i in range(0, y + 1):
+                if grid[x][i] > highest and '\33' not in str(seen[x][i]):
+                    seen[x][i] = '\33[42m' + str(seen[x][i]) + '\33[0m'
+                    debug(x, y, seen, grid)
+                    num += 1
+                    highest = grid[x][i]
+            # R<-L
+            highest = -1
+            print('R<-L ' * 10)
+            for i in range(width - 1, y - 1, -1):
+                if grid[x][i] > highest and '\33' not in str(seen[x][i]):
+                    seen[x][i] = '\33[42m' + str(seen[x][i]) + '\33[0m'
+                    debug(x, y, seen, grid)
+                    num += 1
+                    highest = grid[x][i]
+            # U->D
+            highest = -1
+            print('U->D ' * 10)
+            for i in range(0, x + 1):
+                if grid[i][y] > highest and '\33' not in str(seen[i][y]):
+                    seen[i][y] = '\33[42m' + str(seen[i][y]) + '\33[0m'
+                    debug(x, y, seen, grid)
+                    num += 1
+                    highest = grid[i][y]
+            # U<-D
+            highest = -1
+            print('U<-D ' * 10)
+            for i in range(height - 1, x + 1, -1):
+                if grid[i][y] > highest and '\33' not in str(seen[i][y]):
+                    seen[i][y] = '\33[42m' + str(seen[i][y]) + '\33[0m'
+                    debug(x, y, seen, grid)
+                    num += 1
+                    highest = grid[i][y]
     return num
+
+
+def debug(x, y, seen, grid):
+    seen2 = deepcopy(seen)
+    seen2[x][y] = '\33[44m' + str(grid[x][y]) + '\33[0m'
+    print('\n'.join([''.join(map(str, row)) for row in seen2]))
 
 
 def parse(input):
